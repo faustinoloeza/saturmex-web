@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestor de Rutas y Geocercas</title>
+
+    <!-- Hojas de estilo externas -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
+
+    <link rel="stylesheet" href="css/main.css" />
+</head>
+
+<body>
+    <div class="controls">
+        <button class="btn-primary" id="btn-start-point">Punto Inicial</button>
+        <button class="btn-primary" id="btn-end-point">Punto Final</button>
+        <button class="btn-success" id="btn-calculate-route">Calcular Ruta</button>
+        <button class="btn-danger" id="btn-clear-route">Limpiar Ruta</button>
+        <button class="btn-success" id="btn-save-geofence">Guardar Geocerca</button>
+        <button class="btn-info" id="btn-save-polyline">Guardar Polilínea</button>
+        <button class="btn-danger" id="btn-clear-all">Limpiar Todo</button>
+        <button class="btn-primary" id="btn-predefined-route">Ruta Predefinida</button>
+    </div>
+
+    <div class="status-message" id="statusMessage"></div>
+
+    <div id="jsonModal" class="modal">
+        <div class="modal-content">
+            <span class="modal-close">&times;</span>
+            <h3>Datos de la Polilínea</h3>
+            <pre id="jsonContent"></pre>
+        </div>
+    </div>
+
+    <div id="map"></div>
+
+    <!-- Scripts externos -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
+    <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mapbox/polyline@1.2.1/src/polyline.min.js"></script>
+
+    <script src="js/openstreetmap.js"></script>
+</body>
+
+</html>
