@@ -55,7 +55,8 @@ class RouteManager {
             'btn-save-geofence': () => this.saveGeofence(),
             'btn-save-polyline': () => this.savePolyline(),
             'btn-clear-all': () => this.clearAll(),
-            'btn-predefined-route': () => this.createPredefinedRoute()
+            'btn-predefined-route': () => this.createPredefinedRoute(),
+            'btn-animated-route': () => this.drawAnimatepolilina()
         };
 
         Object.entries(actions).forEach(([id, handler]) => {
@@ -261,6 +262,76 @@ showJsonModal(data) {
     document.querySelector('.modal-close').onclick = () => modal.style.display = 'none';
     window.onclick = (e) => e.target === modal && (modal.style.display = 'none');
 }
+
+
+drawAnimatepolilina(){
+    const coordinates = [
+        [21.179849957189095, -86.89516067504883],
+        [21.192814719234146, -86.86597824096681],
+        [21.183211300973465, -86.85215950012208],
+        [21.170886000230055, -86.86211585998537],
+        [21.175528117191565, -86.87885284423828],
+        [21.17176641291699, -86.88468933105469]
+    ];
+
+    // Dibujar la polilínea completa (estática)
+    const staticPolyline = L.polyline(coordinates, {
+        color: 'blue',
+        weight: 4,
+        opacity: 0.5
+    }).addTo(map);
+
+    // Crear una polilínea animada con efecto de "dash" (línea discontinua)
+    let dashOffset = 0;
+    const animatedPolyline = L.polyline(coordinates, {
+        color: 'green',
+        weight: 8,
+        opacity: 0.8,
+        dashArray: '20, 20', // Patrón de línea discontinua
+        dashOffset: dashOffset // Desplazamiento para la animación
+    }).addTo(map);
+
+    // Función para animar la línea
+    function animateDash() {
+        dashOffset -= 1; // Mueve el patrón hacia la izquierda
+        animatedPolyline.setStyle({ dashOffset: dashOffset });
+        requestAnimationFrame(animateDash); // Bucle de animación suave
+    }
+
+            // Iniciar la animación
+            animateDash();
+            const greenIcon = L.icon({
+                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
+                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+                iconSize: [25, 41], // Tamaño del ícono
+                iconAnchor: [12, 41], // Punto de anclaje (donde apunta el marcador)
+                popupAnchor: [1, -34], // Posición del popup respecto al ícono
+                shadowSize: [41, 41] // Tamaño de la sombra
+            });
+    
+            const blue = L.icon({
+                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
+                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+                iconSize: [25, 41], // Tamaño del ícono
+                iconAnchor: [12, 41], // Punto de anclaje (donde apunta el marcador)
+                popupAnchor: [1, -34], // Posición del popup respecto al ícono
+                shadowSize: [41, 41] // Tamaño de la sombra
+            });
+    
+            // Opcional: Añadir marcadores en inicio y fin
+            L.marker(coordinates[0],{ icon: greenIcon })
+                .addTo(map)
+                .bindPopup('Inicio');
+    
+                L.marker(coordinates[coordinates.length - 1], { icon: blue })
+                .addTo(map)
+                .bindPopup('Fin');
+    
+            // Ajustar el mapa para que la polilínea sea visible
+            map.fitBounds(staticPolyline.getBounds());
+}
+
+
 }
 
 // Inicialización
