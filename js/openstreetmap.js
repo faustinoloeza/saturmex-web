@@ -264,7 +264,7 @@ showJsonModal(data) {
 }
 
 
-drawAnimatepolilina(){
+drawAnimatepolilina() {
     const coordinates = [
         [21.179849957189095, -86.89516067504883],
         [21.192814719234146, -86.86597824096681],
@@ -274,61 +274,66 @@ drawAnimatepolilina(){
         [21.17176641291699, -86.88468933105469]
     ];
 
+    // Referencia a la instancia de la clase
+    const self = this;
+
     // Dibujar la polilínea completa (estática)
     const staticPolyline = L.polyline(coordinates, {
         color: 'blue',
         weight: 4,
         opacity: 0.5
-    }).addTo(map);
+    }).addTo(this.map);
 
-    // Crear una polilínea animada con efecto de "dash" (línea discontinua)
+    // Crear una polilínea animada
     let dashOffset = 0;
     const animatedPolyline = L.polyline(coordinates, {
         color: 'green',
         weight: 8,
         opacity: 0.8,
-        dashArray: '20, 20', // Patrón de línea discontinua
-        dashOffset: dashOffset // Desplazamiento para la animación
-    }).addTo(map);
+        dashArray: '20, 20',
+        dashOffset: dashOffset
+    }).addTo(this.map);
 
     // Función para animar la línea
     function animateDash() {
-        dashOffset -= 1; // Mueve el patrón hacia la izquierda
+        dashOffset -= 1;
         animatedPolyline.setStyle({ dashOffset: dashOffset });
-        requestAnimationFrame(animateDash); // Bucle de animación suave
+        requestAnimationFrame(animateDash);
     }
 
-            // Iniciar la animación
-            animateDash();
-            const greenIcon = L.icon({
-                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
-                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-                iconSize: [25, 41], // Tamaño del ícono
-                iconAnchor: [12, 41], // Punto de anclaje (donde apunta el marcador)
-                popupAnchor: [1, -34], // Posición del popup respecto al ícono
-                shadowSize: [41, 41] // Tamaño de la sombra
-            });
-    
-            const blue = L.icon({
-                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
-                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-                iconSize: [25, 41], // Tamaño del ícono
-                iconAnchor: [12, 41], // Punto de anclaje (donde apunta el marcador)
-                popupAnchor: [1, -34], // Posición del popup respecto al ícono
-                shadowSize: [41, 41] // Tamaño de la sombra
-            });
-    
-            // Opcional: Añadir marcadores en inicio y fin
-            L.marker(coordinates[0],{ icon: greenIcon })
-                .addTo(map)
-                .bindPopup('Inicio');
-    
-                L.marker(coordinates[coordinates.length - 1], { icon: blue })
-                .addTo(map)
-                .bindPopup('Fin');
-    
-            // Ajustar el mapa para que la polilínea sea visible
-            map.fitBounds(staticPolyline.getBounds());
+    // Iniciar la animación
+    animateDash();
+
+    // Configurar íconos
+    const greenIcon = L.icon({
+        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
+        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
+        popupAnchor: [1, -34],
+        shadowSize: [41, 41]
+    });
+
+    const blueIcon = L.icon({
+        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
+        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
+        popupAnchor: [1, -34],
+        shadowSize: [41, 41]
+    });
+
+    // Añadir marcadores
+    L.marker(coordinates[0], { icon: greenIcon })
+        .addTo(this.map)
+        .bindPopup('Inicio');
+
+    L.marker(coordinates[coordinates.length - 1], { icon: blueIcon })
+        .addTo(this.map)
+        .bindPopup('Fin');
+
+    // Ajustar el mapa
+    this.map.fitBounds(staticPolyline.getBounds());
 }
 
 
