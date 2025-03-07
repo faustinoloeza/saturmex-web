@@ -265,6 +265,9 @@ showJsonModal(data) {
 
 
 drawAnimatepolilina() {
+
+    this.clearRoute();
+    this.drawnItems.clearLayers();
     const coordinates = [
         [21.179849957189095, -86.89516067504883],
         [21.192814719234146, -86.86597824096681],
