@@ -4,6 +4,8 @@
     --danger-color: #e74c3c;
     --success-color: #27ae60;
     --text-light: #ecf0f1;
+    --sidebar-width: 250px;
+    --transition-speed: 0.2s;
 }
 
 html,
@@ -12,11 +14,68 @@ body {
     margin: 0;
     padding: 0;
     font-family: 'Segoe UI', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+.container {
+    display: flex;
+    height: calc(100vh - 60px);
+    overflow: hidden; /* Prevenir scroll innecesario */
+}
+
+#sidebar {
+    width: var(--sidebar-width);
+    background-color: #f5f5f5;
+    padding: 15px;
+    overflow-y: auto;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+    will-change: transform; /* Optimización para animaciones */
+    transition: transform var(--transition-speed) ease;
+}
+
+#sidebar h3 {
+    margin-top: 0;
+    color: var(--primary-color);
+    border-bottom: 2px solid var(--secondary-color);
+    padding-bottom: 10px;
+}
+
+.routes-list {
+    margin-top: 15px;
+    /* Optimización para renderizado */
+    contain: content;
+}
+
+.route-item {
+    padding: 10px;
+    margin-bottom: 8px;
+    background-color: white;
+    border-radius: 4px;
+    cursor: pointer;
+    border-left: 4px solid var(--secondary-color);
+    transition: all var(--transition-speed) ease;
+    /* Optimización para texto */
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+.route-item:hover {
+    background-color: #e9f7fe;
+    transform: translateX(3px);
+}
+
+.route-item.active {
+    background-color: #d4edff;
+    border-left-color: var(--success-color);
+    font-weight: bold;
 }
 
 #map {
-    height: calc(100vh - 60px);
-    width: 100%;
+    flex: 1;
+    height: 100%;
+    z-index: 1; /* Asegurar que el mapa esté por debajo de los modales */
 }
 
 .controls {
@@ -25,37 +84,31 @@ body {
     display: flex;
     gap: 8px;
     flex-wrap: wrap;
+    z-index: 2; /* Asegurar que los controles estén por encima del mapa */
 }
 
-.controls button {
+/* Optimización de botones */
+.btn-primary, .btn-danger, .btn-success, .btn-info {
     padding: 8px 16px;
     border: none;
     border-radius: 4px;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all var(--transition-speed) ease;
     font-weight: 500;
+    color: var(--text-light);
 }
+
+.btn-primary { background: var(--secondary-color); }
+.btn-danger { background: var(--danger-color); }
+.btn-success { background: var(--success-color); }
+.btn-info { background: #9b59b6; }
 
 .controls button:hover {
     filter: brightness(1.1);
     transform: translateY(-1px);
 }
 
-.btn-primary {
-    background: var(--secondary-color);
-    color: var(--text-light);
-}
-
-.btn-danger {
-    background: var(--danger-color);
-    color: var(--text-light);
-}
-
-.btn-success {
-    background: var(--success-color);
-    color: var(--text-light);
-}
-
+/* Optimización para el modal */
 .modal {
     display: none;
     position: fixed;
@@ -67,6 +120,7 @@ body {
     z-index: 1000;
     justify-content: center;
     align-items: center;
+    backdrop-filter: blur(2px); /* Efecto de desenfoque para mejorar la legibilidad */
 }
 
 .modal-content {
@@ -77,6 +131,8 @@ body {
     width: 90%;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     position: relative;
+    transform: translateY(0); /* Para animación */
+    transition: transform 0.3s ease;
 }
 
 .modal-close {
@@ -95,18 +151,52 @@ body {
     background: #f8f9fa;
     border-radius: 4px;
     font-family: 'Courier New', monospace;
+    /* Optimización para scroll */
+    overscroll-behavior: contain;
 }
 
+/* Optimización para mensajes de estado */
 .status-message {
     position: fixed;
-    bottom: 20px;
+    top: 70px;
     left: 50%;
     transform: translateX(-50%);
-    padding: 12px 24px;
-    border-radius: 25px;
-    background: var(--primary-color);
+    padding: 10px 20px;
+    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.7);
     color: white;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-    display: none;
-    z-index: 1001;
+    z-index: 1000;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    transition: opacity 0.3s ease;
+}
+
+/* Estilos para diferentes tipos de mensajes */
+.status-message.error { background-color: rgba(231, 76, 60, 0.9); }
+.status-message.success { background-color: rgba(39, 174, 96, 0.9); }
+.status-message.warning { background-color: rgba(241, 196, 15, 0.9); }
+.status-message.info { background-color: rgba(52, 152, 219, 0.9); }
+
+/* Optimización para dispositivos móviles */
+@media (max-width: 768px) {
+    .container {
+        flex-direction: column;
+    }
+    
+    #sidebar {
+        width: 100%;
+        max-height: 30vh;
+    }
+    
+    #map {
+        height: 70vh;
+    }
+    
+    .controls {
+        padding: 8px;
+    }
+    
+    .controls button {
+        padding: 6px 12px;
+        font-size: 14px;
+    }
 }

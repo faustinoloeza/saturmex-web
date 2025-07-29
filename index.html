@@ -4,21 +4,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Gestor de Rutas y Geocercas</title>
 
- 
- 
+    <!-- Precargar recursos críticos -->
+    <link rel="preconnect" href="https://unpkg.com">
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="preconnect" href="https://raw.githubusercontent.com">
 
+    <!-- CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
-    <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
-    <script src="https://unpkg.com/polyline@0.2.0/src/polyline.js"></script>
-    <script src='https://unpkg.com/@turf/turf@6/turf.min.js'></script>
-
     <link rel="stylesheet" href="css/main.css" />
-    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css">
 
+    <!-- Cargar scripts críticos primero -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
 </head>
 
 <body>
@@ -44,16 +46,25 @@
         </div>
     </div>
 
-    <div id="map"></div>
+    <div class="container">
+        <div id="sidebar">
+            <h3>Rutas Disponibles</h3>
+            <div id="routes-list" class="routes-list">
+                <p>Cargando rutas...</p>
+            </div>
+        </div>
+        <div id="map"></div>
+    </div>
 
-    <!-- Scripts externos -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
-    <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mapbox/polyline@1.2.1/src/polyline.min.js"></script>
+    <!-- Scripts no críticos cargados al final -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js" defer></script>
+    <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js" defer></script>
+    <script src="https://unpkg.com/polyline@0.2.0/src/polyline.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mapbox/polyline@1.2.1/src/polyline.min.js" defer></script>
 
-    <script src="js/openstreetmap.js"></script>
+    <!-- Script principal cargado al final -->
+    <script src="js/openstreetmap.js" defer></script>
 </body>
 
 </html>

@@ -1,23 +1,161 @@
 class RouteManager {
     constructor() {
+        // Inicialización de propiedades
         this.map = null;
         this.drawnItems = new L.FeatureGroup();
         this.routeMarkers = { start: null, end: null };
         this.currentRoute = null;
         this.routingControl = null;
         this.geofences = [];
-        this.savedPolylines = []; // <--- Añadir esta línea
+        this.savedPolylines = [];
+        this.externalRoutes = [];
+        this.activeRoutePolyline = null;
+        this.routeCache = new Map(); // Cache para rutas ya dibujadas
+        
+        // Configuración inicial
         this.initMap();
-        this.initEventListeners();
         this.setupDrawControls();
+        this.initEventListeners();
+        this.loadExternalRoutes();
     }
 
     initMap() {
         this.map = L.map('map').setView([21.150385, -86.8619659], 13);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors'
+            attribution: '© OpenStreetMap contributors',
+            maxZoom: 19,
+            // Añadir opciones de rendimiento
+            updateWhenIdle: true,
+            updateWhenZooming: false,
+            preferCanvas: true
         }).addTo(this.map);
         this.drawnItems.addTo(this.map);
+    }
+
+    async loadExternalRoutes() {
+        try {
+            // Usar sessionStorage para cachear las rutas
+            const cachedRoutes = sessionStorage.getItem('externalRoutes');
+            
+            if (cachedRoutes) {
+                this.externalRoutes = JSON.parse(cachedRoutes);
+                this.renderRoutesList();
+                return;
+            }
+            
+            const response = await fetch('https://raw.githubusercontent.com/floezahs/satur/refs/heads/main/rautes.json');
+            if (!response.ok) throw new Error('Error al cargar las rutas');
+            
+            const data = await response.json();
+            
+            // Procesar el formato específico del JSON
+            this.externalRoutes = [];
+            
+            // Iterar sobre cada objeto FeatureCollection en el array
+            data.forEach(collection => {
+                if (collection.type === 'FeatureCollection' && Array.isArray(collection.features)) {
+                    // Añadir cada feature al array de rutas
+                    this.externalRoutes.push(...collection.features);
+                }
+            });
+            
+            // Guardar en sessionStorage para futuras visitas
+            sessionStorage.setItem('externalRoutes', JSON.stringify(this.externalRoutes));
+            
+            this.renderRoutesList();
+        } catch (error) {
+            this.showStatus(`Error al cargar rutas: ${error.message}`, 'error');
+            document.getElementById('routes-list').innerHTML = '<p>Error al cargar rutas</p>';
+        }
+    }
+
+    renderRoutesList() {
+        const routesList = document.getElementById('routes-list');
+        
+        if (!this.externalRoutes || this.externalRoutes.length === 0) {
+            routesList.innerHTML = '<p>No hay rutas disponibles</p>';
+            return;
+        }
+
+        // Usar DocumentFragment para mejorar el rendimiento
+        const fragment = document.createDocumentFragment();
+        
+        this.externalRoutes.forEach((route, index) => {
+            const routeName = route.properties?.name || `Ruta ${index + 1}`;
+            const div = document.createElement('div');
+            div.className = 'route-item';
+            div.dataset.routeIndex = index;
+            div.textContent = routeName;
+            fragment.appendChild(div);
+        });
+
+        routesList.innerHTML = '';
+        routesList.appendChild(fragment);
+
+        // Usar delegación de eventos para mejorar el rendimiento
+        routesList.addEventListener('click', (e) => {
+            const item = e.target.closest('.route-item');
+            if (!item) return;
+            
+            const routeIndex = parseInt(item.dataset.routeIndex);
+            this.displayRouteOnMap(routeIndex);
+            
+            // Marcar como activo
+            document.querySelectorAll('.route-item').forEach(el => el.classList.remove('active'));
+            item.classList.add('active');
+        });
+    }
+
+    displayRouteOnMap(routeIndex) {
+        // Limpiar ruta activa anterior si existe
+        if (this.activeRoutePolyline) {
+            this.map.removeLayer(this.activeRoutePolyline);
+        }
+
+        const route = this.externalRoutes[routeIndex];
+        if (!route || !route.geometry || !route.geometry.coordinates) {
+            this.showStatus('Formato de ruta inválido', 'error');
+            return;
+        }
+
+        // Verificar si la ruta ya está en caché
+        if (this.routeCache.has(routeIndex)) {
+            this.activeRoutePolyline = this.routeCache.get(routeIndex);
+            this.activeRoutePolyline.addTo(this.map);
+            this.map.fitBounds(this.activeRoutePolyline.getBounds());
+            
+            const routeName = route.properties?.name || 'Ruta seleccionada';
+            const routeLength = route.properties?.length || '';
+            this.showStatus(`Mostrando: ${routeName} (${routeLength})`, 'info');
+            return;
+        }
+
+        // Las coordenadas en el JSON están en formato [lat, lng], que es lo que espera Leaflet
+        const coordinates = route.geometry.coordinates;
+        
+        if (coordinates.length < 2) {
+            this.showStatus('La ruta no tiene suficientes coordenadas válidas', 'error');
+            return;
+        }
+
+        // Crear la polilínea y añadirla al mapa
+        this.activeRoutePolyline = L.polyline(coordinates, {
+            color: '#3498db',
+            weight: 5,
+            opacity: 0.8,
+            smoothFactor: 1.5 // Optimización para suavizar la línea
+        }).addTo(this.map);
+
+        // Guardar en caché para uso futuro
+        this.routeCache.set(routeIndex, this.activeRoutePolyline);
+
+        // Ajustar el mapa para mostrar toda la ruta
+        this.map.fitBounds(this.activeRoutePolyline.getBounds());
+
+        // Mostrar información de la ruta
+        const routeName = route.properties?.name || 'Ruta seleccionada';
+        const routeLength = route.properties?.length || '';
+        this.showStatus(`Mostrando: ${routeName} (${routeLength})`, 'info');
     }
 
     setupDrawControls() {
@@ -243,15 +381,40 @@ clearAll() {
     this.drawnItems.clearLayers();
     Object.values(this.routeMarkers).forEach(m => m && this.map.removeLayer(m));
     this.geofences = [];
+    
+    // También limpiar la ruta activa del panel lateral
+    if (this.activeRoutePolyline) {
+        this.map.removeLayer(this.activeRoutePolyline);
+        this.activeRoutePolyline = null;
+    }
+    
+    // Quitar la clase activa de todos los elementos de ruta
+    document.querySelectorAll('.route-item').forEach(el => el.classList.remove('active'));
+    
     this.showStatus('Todos los elementos han sido eliminados', 'info');
 }
 
+// Método optimizado para mostrar mensajes de estado
 showStatus(message, type = 'info') {
     const statusEl = document.getElementById('statusMessage');
     statusEl.textContent = message;
     statusEl.style.display = 'block';
     statusEl.className = `status-message ${type}`;
-    setTimeout(() => statusEl.style.display = 'none', 3000);
+    
+    // Usar requestAnimationFrame para mejorar el rendimiento
+    if (this._statusTimeout) {
+        clearTimeout(this._statusTimeout);
+    }
+    
+    this._statusTimeout = setTimeout(() => {
+        requestAnimationFrame(() => {
+            statusEl.style.opacity = '0';
+            setTimeout(() => {
+                statusEl.style.display = 'none';
+                statusEl.style.opacity = '1';
+            }, 300);
+        });
+    }, 3000);
 }
 
 showJsonModal(data) {
@@ -372,11 +535,13 @@ drawAnimatepolilina() {
 
 }
 
-// Inicialización
+// Inicialización con carga diferida
 document.addEventListener('DOMContentLoaded', () => {
     if (!window.L || !window.polyline || !window.turf) {
         alert('Error al cargar dependencias requeridas');
         return;
     }
-    new RouteManager();
+    
+    // Iniciar la aplicación después de un pequeño retraso para permitir que la página termine de renderizarse
+    setTimeout(() => new RouteManager(), 0);
 });
