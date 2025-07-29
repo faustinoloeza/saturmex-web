@@ -1,6 +1,5 @@
 class RouteManager {
     constructor() {
-        // Inicialización de propiedades
         this.map = null;
         this.drawnItems = new L.FeatureGroup();
         this.routeMarkers = { start: null, end: null };
@@ -10,39 +9,22 @@ class RouteManager {
         this.savedPolylines = [];
         this.externalRoutes = [];
         this.activeRoutePolyline = null;
-        this.routeCache = new Map(); // Cache para rutas ya dibujadas
-        
-        // Configuración inicial
         this.initMap();
-        this.setupDrawControls();
-        this.initEventListeners();
         this.loadExternalRoutes();
+        this.initEventListeners();
+        this.setupDrawControls();
     }
 
     initMap() {
         this.map = L.map('map').setView([21.150385, -86.8619659], 13);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors',
-            maxZoom: 19,
-            // Añadir opciones de rendimiento
-            updateWhenIdle: true,
-            updateWhenZooming: false,
-            preferCanvas: true
+            attribution: '© OpenStreetMap contributors'
         }).addTo(this.map);
         this.drawnItems.addTo(this.map);
     }
 
     async loadExternalRoutes() {
         try {
-            // Usar sessionStorage para cachear las rutas
-            const cachedRoutes = sessionStorage.getItem('externalRoutes');
-            
-            if (cachedRoutes) {
-                this.externalRoutes = JSON.parse(cachedRoutes);
-                this.renderRoutesList();
-                return;
-            }
-            
             const response = await fetch('https://raw.githubusercontent.com/floezahs/satur/refs/heads/main/rautes.json');
             if (!response.ok) throw new Error('Error al cargar las rutas');
             
@@ -55,12 +37,11 @@ class RouteManager {
             data.forEach(collection => {
                 if (collection.type === 'FeatureCollection' && Array.isArray(collection.features)) {
                     // Añadir cada feature al array de rutas
-                    this.externalRoutes.push(...collection.features);
+                    collection.features.forEach(feature => {
+                        this.externalRoutes.push(feature);
+                    });
                 }
             });
-            
-            // Guardar en sessionStorage para futuras visitas
-            sessionStorage.setItem('externalRoutes', JSON.stringify(this.externalRoutes));
             
             this.renderRoutesList();
         } catch (error) {
@@ -77,56 +58,51 @@ class RouteManager {
             return;
         }
 
-        // Usar DocumentFragment para mejorar el rendimiento
-        const fragment = document.createDocumentFragment();
-        
+        let html = '';
         this.externalRoutes.forEach((route, index) => {
+            // Obtener el nombre de la ruta desde properties.name
             const routeName = route.properties?.name || `Ruta ${index + 1}`;
-            const div = document.createElement('div');
-            div.className = 'route-item';
-            div.dataset.routeIndex = index;
-            div.textContent = routeName;
-            fragment.appendChild(div);
+            html += `<div class="route-item" data-route-index="${index}">${routeName}</div>`;
         });
 
-        routesList.innerHTML = '';
-        routesList.appendChild(fragment);
+        routesList.innerHTML = html;
 
-        // Usar delegación de eventos para mejorar el rendimiento
-        routesList.addEventListener('click', (e) => {
-            const item = e.target.closest('.route-item');
-            if (!item) return;
-            
-            const routeIndex = parseInt(item.dataset.routeIndex);
-            this.displayRouteOnMap(routeIndex);
-            
-            // Marcar como activo
-            document.querySelectorAll('.route-item').forEach(el => el.classList.remove('active'));
-            item.classList.add('active');
+        // Agregar event listeners a los elementos de ruta
+        document.querySelectorAll('.route-item').forEach(item => {
+            item.addEventListener('click', (e) => {
+                const routeIndex = parseInt(e.target.getAttribute('data-route-index'));
+                this.displayRouteOnMap(routeIndex);
+                
+                // Marcar como activo
+                document.querySelectorAll('.route-item').forEach(el => el.classList.remove('active'));
+                e.target.classList.add('active');
+            });
         });
     }
 
     displayRouteOnMap(routeIndex) {
         // Limpiar ruta activa anterior si existe
         if (this.activeRoutePolyline) {
-            this.map.removeLayer(this.activeRoutePolyline);
+            // Si es un grupo de capas, eliminar cada capa individualmente
+            if (this.activeRoutePolyline instanceof L.LayerGroup) {
+                this.activeRoutePolyline.eachLayer(layer => {
+                    this.map.removeLayer(layer);
+                });
+            } else {
+                this.map.removeLayer(this.activeRoutePolyline);
+            }
+            this.activeRoutePolyline = null;
+        }
+        
+        // Detener la animación anterior si existe
+        if (this.animationFrameId) {
+            cancelAnimationFrame(this.animationFrameId);
+            this.animationFrameId = null;
         }
 
         const route = this.externalRoutes[routeIndex];
         if (!route || !route.geometry || !route.geometry.coordinates) {
             this.showStatus('Formato de ruta inválido', 'error');
-            return;
-        }
-
-        // Verificar si la ruta ya está en caché
-        if (this.routeCache.has(routeIndex)) {
-            this.activeRoutePolyline = this.routeCache.get(routeIndex);
-            this.activeRoutePolyline.addTo(this.map);
-            this.map.fitBounds(this.activeRoutePolyline.getBounds());
-            
-            const routeName = route.properties?.name || 'Ruta seleccionada';
-            const routeLength = route.properties?.length || '';
-            this.showStatus(`Mostrando: ${routeName} (${routeLength})`, 'info');
             return;
         }
 
@@ -138,19 +114,40 @@ class RouteManager {
             return;
         }
 
-        // Crear la polilínea y añadirla al mapa
-        this.activeRoutePolyline = L.polyline(coordinates, {
-            color: '#3498db',
-            weight: 5,
-            opacity: 0.8,
-            smoothFactor: 1.5 // Optimización para suavizar la línea
-        }).addTo(this.map);
+        // Crear la polilínea estática (fondo)
+        const staticPolyline = L.polyline(coordinates, {
+            color: 'blue',
+            weight: 4,
+            opacity: 0.5
+        });
 
-        // Guardar en caché para uso futuro
-        this.routeCache.set(routeIndex, this.activeRoutePolyline);
+        // Crear la polilínea animada
+        let dashOffset = 0;
+        const animatedPolyline = L.polyline(coordinates, {
+            color: 'green',
+            weight: 8,
+            opacity: 0.8,
+            dashArray: '20, 20',
+            dashOffset: dashOffset
+        });
+
+        // Crear el grupo de capas y añadirlo al mapa
+        this.activeRoutePolyline = L.layerGroup([staticPolyline, animatedPolyline]);
+        this.activeRoutePolyline.addTo(this.map); // Añadir el grupo al mapa
+
+        // Función para animar la línea
+        const self = this;
+        function animateDash() {
+            dashOffset -= 1;
+            animatedPolyline.setStyle({ dashOffset: dashOffset });
+            self.animationFrameId = requestAnimationFrame(animateDash);
+        }
+
+        // Iniciar la animación
+        animateDash();
 
         // Ajustar el mapa para mostrar toda la ruta
-        this.map.fitBounds(this.activeRoutePolyline.getBounds());
+        this.map.fitBounds(staticPolyline.getBounds());
 
         // Mostrar información de la ruta
         const routeName = route.properties?.name || 'Ruta seleccionada';
@@ -384,8 +381,21 @@ clearAll() {
     
     // También limpiar la ruta activa del panel lateral
     if (this.activeRoutePolyline) {
-        this.map.removeLayer(this.activeRoutePolyline);
+        // Si es un grupo de capas, eliminar cada capa individualmente
+        if (this.activeRoutePolyline instanceof L.LayerGroup) {
+            this.activeRoutePolyline.eachLayer(layer => {
+                this.map.removeLayer(layer);
+            });
+        } else {
+            this.map.removeLayer(this.activeRoutePolyline);
+        }
         this.activeRoutePolyline = null;
+    }
+    
+    // Detener cualquier animación en curso
+    if (this.animationFrameId) {
+        cancelAnimationFrame(this.animationFrameId);
+        this.animationFrameId = null;
     }
     
     // Quitar la clase activa de todos los elementos de ruta
@@ -394,27 +404,12 @@ clearAll() {
     this.showStatus('Todos los elementos han sido eliminados', 'info');
 }
 
-// Método optimizado para mostrar mensajes de estado
 showStatus(message, type = 'info') {
     const statusEl = document.getElementById('statusMessage');
     statusEl.textContent = message;
     statusEl.style.display = 'block';
     statusEl.className = `status-message ${type}`;
-    
-    // Usar requestAnimationFrame para mejorar el rendimiento
-    if (this._statusTimeout) {
-        clearTimeout(this._statusTimeout);
-    }
-    
-    this._statusTimeout = setTimeout(() => {
-        requestAnimationFrame(() => {
-            statusEl.style.opacity = '0';
-            setTimeout(() => {
-                statusEl.style.display = 'none';
-                statusEl.style.opacity = '1';
-            }, 300);
-        });
-    }, 3000);
+    setTimeout(() => statusEl.style.display = 'none', 3000);
 }
 
 showJsonModal(data) {
@@ -535,13 +530,11 @@ drawAnimatepolilina() {
 
 }
 
-// Inicialización con carga diferida
+// Inicialización
 document.addEventListener('DOMContentLoaded', () => {
     if (!window.L || !window.polyline || !window.turf) {
         alert('Error al cargar dependencias requeridas');
         return;
     }
-    
-    // Iniciar la aplicación después de un pequeño retraso para permitir que la página termine de renderizarse
-    setTimeout(() => new RouteManager(), 0);
+    new RouteManager();
 });
