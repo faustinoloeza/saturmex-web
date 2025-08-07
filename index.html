@@ -25,15 +25,10 @@
 
 <body>
     <div class="controls">
-        <button class="btn-primary" id="btn-start-point">Punto Inicial</button>
-        <button class="btn-primary" id="btn-end-point">Punto Final</button>
-        <button class="btn-success" id="btn-calculate-route">Calcular Ruta</button>
-        <button class="btn-danger" id="btn-clear-route">Limpiar Ruta</button>
         <button class="btn-success" id="btn-save-geofence">Guardar Geocerca</button>
         <button class="btn-info" id="btn-save-polyline">Guardar Polilínea</button>
+        <button class="btn-warning" id="btn-paste-edit-polyline">Pegar y Editar Polilínea</button>
         <button class="btn-danger" id="btn-clear-all">Limpiar Todo</button>
-        <button class="btn-primary" id="btn-predefined-route">Ruta Predefinida</button>
-        <button class="btn-primary" id="btn-animated-route">Ruta animada</button>
     </div>
 
     <div class="status-message" id="statusMessage"></div>
@@ -43,6 +38,15 @@
             <span class="modal-close">&times;</span>
             <h3>Datos de la Polilínea</h3>
             <pre id="jsonContent"></pre>
+        </div>
+    </div>
+
+    <div id="pasteJsonModal" class="modal">
+        <div class="modal-content">
+            <span class="modal-close">&times;</span>
+            <h3>Pegar GeoJSON de Polilínea</h3>
+            <textarea id="pasteJsonInput" rows="10" cols="50" placeholder="Pega aquí tu GeoJSON"></textarea>
+            <button class="btn-primary" id="btn-load-pasted-json">Cargar Polilínea</button>
         </div>
     </div>
 
