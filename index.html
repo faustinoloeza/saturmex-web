@@ -1,74 +1,97 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Gestor de Rutas y Geocercas</title>
-
-    <!-- Precargar recursos críticos -->
-    <link rel="preconnect" href="https://unpkg.com">
-    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
-    <link rel="preconnect" href="https://cdn.jsdelivr.net">
-    <link rel="preconnect" href="https://raw.githubusercontent.com">
-
-    <!-- CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
-    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
-    <link rel="stylesheet" href="css/main.css" />
-
-    <!-- Cargar scripts críticos primero -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="description" content="Saturmex — visualizador de rutas con mapa interactivo. Explora, comparte y navega rutas fácilmente." />
+  <title>Saturmex</title>
+  <!-- Inter font for better typography -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- favicon (agrega /favicon.ico si quieres un ícono personalizado) -->
+  <link rel="icon" href="/favicon.ico" />
+  <!-- Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <!-- Custom styles -->
+  <link rel="stylesheet" href="/css/main.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
+  <style>
+    /* Map full height in the right column */
+    #map { height: 100%; position: relative; }
+    /* Simple fade-in for list items */
+    .route-item { transition: transform .12s ease, box-shadow .12s ease, background-color .15s ease; }
+    .route-item:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,.08); }
+  </style>
 </head>
-
-<body>
-    <div class="controls">
-        <button class="btn-success" id="btn-save-geofence">Guardar Geocerca</button>
-        <button class="btn-info" id="btn-save-polyline">Guardar Polilínea</button>
-        <button class="btn-warning" id="btn-paste-edit-polyline">Pegar y Editar Polilínea</button>
-        <button class="btn-danger" id="btn-clear-all">Limpiar Todo</button>
-    </div>
-
-    <div class="status-message" id="statusMessage"></div>
-
-    <div id="jsonModal" class="modal">
-        <div class="modal-content">
-            <span class="modal-close">&times;</span>
-            <h3>Datos de la Polilínea</h3>
-            <pre id="jsonContent"></pre>
+  <body class="bg-gray-50 text-gray-800 h-screen overflow-hidden font-sans">
+  <header class="bg-white shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        <div class="flex items-center gap-3">
+          <svg class="w-8 h-8 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A2 2 0 013 15.382V5.618a2 2 0 011.553-1.894L9 1m0 19l6-3V4l-6 3v13z"/></svg>
+          <div>
+            <h1 class="text-lg font-semibold">Saturmex</h1>
+            <p class="text-sm text-gray-500">by Faustinoloeza</p>
+          </div>
+  </div>
+        <div class="flex items-center gap-3">
+          <!-- Theme toggle -->
+          <button id="themeToggleBtn" aria-label="Alternar tema" title="Alternar tema" class="inline-flex items-center px-3 py-1.5 bg-gray-100 text-gray-700 text-sm rounded-md hover:bg-gray-200">
+            <svg id="themeIcon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <path d="M10 2a.75.75 0 01.75.75V4a.75.75 0 01-1.5 0V2.75A.75.75 0 0110 2zM10 16a.75.75 0 01.75.75V18a.75.75 0 01-1.5 0v-1.25A.75.75 0 0110 16zM4.22 4.22a.75.75 0 011.06 0l.88.88a.75.75 0 11-1.06 1.06l-.88-.88a.75.75 0 010-1.06zM14.94 14.94a.75.75 0 011.06 0l.88.88a.75.75 0 11-1.06 1.06l-.88-.88a.75.75 0 010-1.06zM2 10a.75.75 0 01.75-.75H4a.75.75 0 010 1.5H2.75A.75.75 0 012 10zM16 10a.75.75 0 01.75-.75H18a.75.75 0 010 1.5h-1.25A.75.75 0 0116 10zM4.22 15.78a.75.75 0 010-1.06l.88-.88a.75.75 0 111.06 1.06l-.88.88a.75.75 0 01-1.06 0zM14.94 5.06a.75.75 0 010-1.06l.88-.88a.75.75 0 111.06 1.06l-.88.88a.75.75 0 01-1.06 0zM10 5.5a4.5 4.5 0 100 9 4.5 4.5 0 000-9z" />
+            </svg>
+          </button>
+          <!-- Mobile: open drawer button -->
+          <button id="openDrawerBtn" class="md:hidden inline-flex items-center px-3 py-1.5 bg-indigo-600 text-white text-sm rounded-md hover:bg-indigo-700" aria-controls="mobileDrawer" aria-expanded="false" aria-label="Abrir rutas">☰ Rutas</button>
         </div>
+      </div>
     </div>
+  </header>
 
-    <div id="pasteJsonModal" class="modal">
-        <div class="modal-content">
-            <span class="modal-close">&times;</span>
-            <h3>Pegar GeoJSON de Polilínea</h3>
-            <textarea id="pasteJsonInput" rows="10" cols="50" placeholder="Pega aquí tu GeoJSON"></textarea>
-            <button class="btn-primary" id="btn-load-pasted-json">Cargar Polilínea</button>
+  <main class="mx-auto px-4 sm:px-6 lg:px-8" role="main">
+    <div class="flex gap-6 h-[calc(100vh-4rem)]">
+      <!-- Sidebar / List (narrow) - visible on md+ -->
+      <aside id="sidebar" role="navigation" aria-label="Lista de rutas" class="hidden md:flex flex-col w-64 bg-white rounded-lg shadow-sm p-3">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-md font-medium">Rutas</h2>
+          <div id="status" class="text-sm text-gray-500"></div>
         </div>
-    </div>
 
-    <div class="container">
-        <div id="sidebar">
-            <h3>Rutas Disponibles</h3>
-            <div id="routes-list" class="routes-list">
-                <p>Cargando rutas...</p>
-            </div>
+        <div class="mb-4">
+          <input id="search" type="search" placeholder="Buscar rutas por nombre..." class="w-full px-3 py-2 border rounded-md bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-200" />
         </div>
-        <div id="map"></div>
+
+        <!-- routes list scrolls internally only -->
+        <div id="routesList" class="space-y-2 overflow-auto flex-1" style="min-height:0;" aria-live="polite"></div>
+      </aside>
+
+      <!-- Map area (fills remaining space) -->
+      <section class="flex-1 bg-white rounded-lg shadow-sm p-0 overflow-hidden">
+        <div id="map" class="w-full h-full" role="region" aria-label="Mapa interactivo de rutas">
+          <!-- Floating Action Button (vacío) encima del mapa -->
+          <button id="fab-map" aria-label="Acción flotante" title="Acción" 
+            class="absolute bottom-4 right-4 h-12 rounded-full bg-indigo-600 text-white shadow-lg flex items-center justify-center text-sm px-4 whitespace-nowrap overflow-hidden"
+            style="z-index:10000; min-width:48px; display:none;">
+            <!-- texto del nombre de la ruta aparecerá aquí -->
+          </button>
+        </div>
+      </section>
     </div>
+  </main>
 
-    <!-- Scripts no críticos cargados al final -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js" defer></script>
-    <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js" defer></script>
-    <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js" defer></script>
-    <script src="https://unpkg.com/polyline@0.2.0/src/polyline.js" defer></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mapbox/polyline@1.2.1/src/polyline.min.js" defer></script>
+  <!-- Mobile drawer for routes (hidden on md+) -->
+  <div id="mobileDrawer" class="fixed inset-0 hidden" style="z-index:99999;">
+    <div id="drawerBackdrop" class="absolute inset-0 bg-black opacity-40" style="z-index:99990;"></div>
+    <div class="absolute left-0 top-0 bottom-0 w-4/5 max-w-xs bg-white shadow-lg p-4 flex flex-col" style="z-index:100000;">
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="text-lg font-medium">Rutas</h3>
+        <button id="closeDrawerBtn" class="inline-flex items-center px-3 py-1 bg-gray-100 rounded-md">Cerrar</button>
+      </div>
+      <div id="mobileRoutesContainer" class="flex-1 overflow-auto" style="min-height:0;"></div>
+    </div>
+  </div>
 
-    <!-- Script principal cargado al final -->
-    <script src="js/openstreetmap.js" defer></script>
+  <script src="/js/openstreetmap.js?v=1"></script>
 </body>
-
 </html>

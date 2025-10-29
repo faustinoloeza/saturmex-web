@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Gestor de Rutas y Geocercas</title>
+
+    <!-- Precargar recursos críticos -->
+    <link rel="preconnect" href="https://unpkg.com">
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="preconnect" href="https://raw.githubusercontent.com">
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
+    <link rel="stylesheet" href="css/main.css" />
+
+    <!-- Cargar scripts críticos primero -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
+</head>
+
+<body>
+    <div class="controls">
+        <button class="btn-success" id="btn-save-geofence">Guardar Geocerca</button>
+        <button class="btn-info" id="btn-save-polyline">Guardar Polilínea</button>
+        <button class="btn-warning" id="btn-paste-edit-polyline">Pegar y Editar Polilínea</button>
+        <button class="btn-danger" id="btn-clear-all">Limpiar Todo</button>
+    </div>
+
+    <div class="status-message" id="statusMessage"></div>
+
+    <div id="jsonModal" class="modal">
+        <div class="modal-content">
+            <span class="modal-close">&times;</span>
+            <h3>Datos de la Polilínea</h3>
+            <pre id="jsonContent"></pre>
+        </div>
+    </div>
+
+    <div id="pasteJsonModal" class="modal">
+        <div class="modal-content">
+            <span class="modal-close">&times;</span>
+            <h3>Pegar GeoJSON de Polilínea</h3>
+            <textarea id="pasteJsonInput" rows="10" cols="50" placeholder="Pega aquí tu GeoJSON"></textarea>
+            <button class="btn-primary" id="btn-load-pasted-json">Cargar Polilínea</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <div id="sidebar">
+            <h3>Rutas Disponibles</h3>
+            <div id="routes-list" class="routes-list">
+                <p>Cargando rutas...</p>
+            </div>
+        </div>
+        <div id="map"></div>
+    </div>
+
+    <!-- Scripts no críticos cargados al final -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js" defer></script>
+    <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js" defer></script>
+    <script src="https://unpkg.com/polyline@0.2.0/src/polyline.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mapbox/polyline@1.2.1/src/polyline.min.js" defer></script>
+
+    <!-- Script principal cargado al final -->
+    <script src="js/admin.js" defer></script>
+</body>
+
+</html>
