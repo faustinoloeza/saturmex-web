@@ -160,10 +160,11 @@ class RouteManager {
             })
         }).addTo(this.map);
 
-        // Agregar popups a los marcadores
-        const routeName = route.properties?.name || 'Ruta seleccionada';
-        this.routeMarkers.start.bindPopup(`<b>Inicio:</b> ${routeName}`);
-        this.routeMarkers.end.bindPopup(`<b>Final:</b> ${routeName}`);
+    // Agregar popups a los marcadores
+    const routeName = route.properties?.name || 'Ruta seleccionada';
+    // Add a button in the popup that opens Street View for the start and end coordinates
+    this.routeMarkers.start.bindPopup(`<b>Inicio:</b> ${routeName}<br><button onclick="document.routeManager.openStreetView(${startCoord[0]}, ${startCoord[1]})">Ver Street View (Inicio)</button>`);
+    this.routeMarkers.end.bindPopup(`<b>Final:</b> ${routeName}<br><button onclick="document.routeManager.openStreetView(${endCoord[0]}, ${endCoord[1]})">Ver Street View (Final)</button>`);
 
         this.activeRoutePolyline = L.layerGroup([staticPolyline, animatedPolyline]);
         this.activeRoutePolyline.addTo(this.map);
@@ -181,6 +182,29 @@ class RouteManager {
 
         const routeLength = route.properties?.length || '';
         this.showStatus(`Mostrando: ${routeName} (${routeLength})`, 'info');
+
+        // Remove any previous route action button
+        const prevAction = document.getElementById('routeAction');
+        if (prevAction) prevAction.remove();
+
+        // Create a small action area below the status message with Street View buttons for start and end
+        const actionDiv = document.createElement('div');
+        actionDiv.id = 'routeAction';
+        actionDiv.style.marginTop = '8px';
+        actionDiv.innerHTML = `
+            <button class="btn-info" id="btn-streetview-start">Ver Street View (Inicio)</button>
+            <button class="btn-info" id="btn-streetview-end">Ver Street View (Final)</button>
+        `;
+        const statusEl = document.getElementById('statusMessage');
+        if (statusEl && statusEl.parentNode) {
+            statusEl.parentNode.insertBefore(actionDiv, statusEl.nextSibling);
+            document.getElementById('btn-streetview-start').addEventListener('click', () => {
+                this.openStreetView(startCoord[0], startCoord[1]);
+            });
+            document.getElementById('btn-streetview-end').addEventListener('click', () => {
+                this.openStreetView(endCoord[0], endCoord[1]);
+            });
+        }
     }
 
     setupDrawControls() {
@@ -602,6 +626,10 @@ class RouteManager {
         document.querySelectorAll('.route-item').forEach(el => el.classList.remove('active'));
         
         this.showStatus('Todos los elementos han sido eliminados', 'info');
+
+        // Remove any route-specific action button
+        const action = document.getElementById('routeAction');
+        if (action && action.parentNode) action.parentNode.removeChild(action);
     }
 
     showStatus(message, type = 'info') {
@@ -619,6 +647,22 @@ class RouteManager {
 
         document.querySelector('.modal-close').onclick = () => modal.style.display = 'none';
         window.onclick = (e) => e.target === modal && (modal.style.display = 'none');
+    }
+
+    // Open Google Street View for a given latitude and longitude
+    openStreetView(lat, lng) {
+        // Ensure numbers
+        if (isNaN(lat) || isNaN(lng)) {
+            alert('⚠️ Por favor ingresa coordenadas válidas');
+            return;
+        }
+
+        // URL de Google Maps con Street View a nivel de calle
+        // Formato aproximado con parameters for 3D/StreetView
+        const streetViewUrl = `https://www.google.com/maps/@${lat},${lng},3a,75y,0h,90t/data=!3m6!1e1!3m4!1s!2e0!7i16384!8i8192`;
+
+        // Abrir en nueva pestaña
+        window.open(streetViewUrl, '_blank');
     }
 
     
